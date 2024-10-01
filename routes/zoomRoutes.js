@@ -1,57 +1,32 @@
 const express = require('express');
-const crypto = require('crypto');  // Import crypto for signature generation
+const crypto = require('crypto');
 const router = express.Router();
 
-const ZOOM_API_KEY = process.env.ZOOM_API_KEY;
-const ZOOM_API_SECRET = process.env.ZOOM_API_SECRET;
-
-// Generate Zoom signature
 router.post('/generateSignature', (req, res) => {
-  const { meetingNumber, role } = req.body;
+  const { sessionName, role } = req.body;
+  const iat = Math.round(new Date().getTime() / 1000) - 30;
+  const exp = iat + 60 * 60 * 2; // Signature expires in 2 hours
 
-  // Validate the request body
-  if (!meetingNumber || role == null) {
-    return res.status(400).json({ error: "Missing meetingNumber or role" });
-  }
+  const oHeader = { alg: 'HS256', typ: 'JWT' };
+  const oPayload = {
+    app_key: process.env.ZOOM_API_KEY,
+    tpc: sessionName,
+    role: role,
+    exp: exp,
+    iat: iat
+  };
 
-  try {
-    // Generate the signature based on Zoom's SDK requirements
-    const timestamp = new Date().getTime() - 30000; // Subtracting 30 seconds from current time
-    const msg = Buffer.from(`${ZOOM_API_KEY}${meetingNumber}${timestamp}${role}`).toString('base64');
+  const sHeader = Buffer.from(JSON.stringify(oHeader)).toString('base64').replace(/=/g, '');
+  const sPayload = Buffer.from(JSON.stringify(oPayload)).toString('base64').replace(/=/g, '');
+  const data = sHeader + '.' + sPayload;
 
-    const hash = crypto.createHmac('sha256', ZOOM_API_SECRET).update(msg).digest('base64');
+  const signature = crypto.createHmac('sha256', process.env.ZOOM_API_SECRET)
+    .update(data)
+    .digest('base64')
+    .replace(/=/g, '');
 
-    const signature = Buffer.from(`${ZOOM_API_KEY}.${meetingNumber}.${timestamp}.${role}.${hash}`).toString('base64');
-
-    // Send the generated signature in response
-    res.json({ signature });
-  } catch (error) {
-    console.error('Error generating signature:', error);
-    res.status(500).json({ error: 'Unable to generate signature' });
-  }
-});
-
-// Create a Zoom meeting (example)
-router.post('/create-meeting', async (req, res) => {
-  const { topic, startTime, duration, password } = req.body;
-  // Add your Zoom API integration to create a meeting here
-  // For now, we return a dummy response
-  try {
-    const meetingResponse = await createZoomMeeting({ topic, startTime, duration, password });
-    res.json(meetingResponse);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create meeting.' });
-  }
-});
-
-// Get Zoom meetings (example)
-router.get('/meetings', async (req, res) => {
-  try {
-    const meetings = await getZoomMeetings(); // Function to fetch meetings from Zoom
-    res.json(meetings);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch meetings.' });
-  }
+  const jwtToken = `${sHeader}.${sPayload}.${signature}`;
+  res.json({ signature: jwtToken });
 });
 
 module.exports = router;
