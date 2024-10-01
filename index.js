@@ -4,7 +4,6 @@ const crypto = require('crypto');  // Ensure crypto is imported
 const connectDB = require('./config/db.cjs');
 const sessionMiddleware = require('./middleware/sessionMiddleware.cjs');
 const cors = require('cors');
-const helmet = require('helmet'); // Import helmet
 const authRoutes = require('./routes/authRoutes.cjs');
 const childRoutes = require('./routes/childRoutes.cjs');
 const emotionDetectionRoutes = require('./routes/emotionDetectionRoutes.cjs');
@@ -14,7 +13,6 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Middleware
-app.use(helmet()); // Use helmet for security headers
 app.use(cors({
   origin: ['https://ghosson16.github.io', 'http://localhost:4173'],
   credentials: true,
