@@ -7,7 +7,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes.cjs');
 const childRoutes = require('./routes/childRoutes.cjs');
 const emotionDetectionRoutes = require('./routes/emotionDetectionRoutes.cjs');
-const zoomRoutes = require('./routes/zoomRoutes.js'); // Include your zoom routes
+const zoomRoutes = require('./routes/zoomRoutes.cjs'); // Include your zoom routes
 
 const app = express();
 const port = process.env.PORT || 5001;
