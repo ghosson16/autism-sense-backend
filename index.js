@@ -4,6 +4,7 @@ const crypto = require('crypto');  // Ensure crypto is imported
 const connectDB = require('./config/db.cjs');
 const sessionMiddleware = require('./middleware/sessionMiddleware.cjs');
 const cors = require('cors');
+const helmet = require('helmet');
 const authRoutes = require('./routes/authRoutes.cjs');
 const childRoutes = require('./routes/childRoutes.cjs');
 const emotionDetectionRoutes = require('./routes/emotionDetectionRoutes.cjs');
@@ -13,10 +14,18 @@ const app = express();
 const port = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors({
-  origin: ['https://ghosson16.github.io', 'http://localhost:4173'],
-  credentials: true,
-}));
+// Apply CORS to all routes
+app.use(cors());
+
+// Helmet for basic security headers
+app.use(helmet());
+
+// Add specific headers required for Zoom Video SDK
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+  next();
+});
 
 app.use(express.json());
 app.use(sessionMiddleware);
